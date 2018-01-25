@@ -45,6 +45,8 @@ public class PayController {
     @ResponseBody
     public Map<String, Object> pay(HttpServletRequest request) {
 
+        Map result = new HashMap();
+
         try {
             String type = request.getParameter("Ha-Sign");
             String orderNo = request.getParameter("Ha-OutTradeNo");
@@ -52,14 +54,13 @@ public class PayController {
             String subject = request.getParameter("Ha-Subject");
             String body = request.getParameter("Ha-Body");
 
-            Map result = new HashMap();
 
             if (orderNo == null || "".equals(orderNo)) {
                 result.put("Ha-status", "fail:orderNo can not be null");
                 return result;
             }
 
-            if ("place".equals(type)) {
+            if ("order".equals(type)) {
                 if (totalAmount == null || "".equals(totalAmount)) {
                     result.put("Ha-status", "fail:totalAmount can not be null");
                     return result;
@@ -83,6 +84,17 @@ public class PayController {
                 return result;
             } else if ("query".equals(type)) {
                 boolean isPaid = orderInfoService.isPaid(orderNo);
+                String status = "false";
+                if (isPaid) {
+                    status = "success";
+                }
+                OrderInfo order = orderInfoDao.findByOrderNo(orderNo);
+                String payType = order.getPayType();
+                String custome = order.getPayAccount();
+
+                result.put("Ha-status", status);
+                result.put("Ha-type", payType);
+                result.put("Ha-Customer", "ceshi");
             }
         } catch (Exception e) {
             logger.error("", e);
@@ -161,6 +173,7 @@ public class PayController {
             OrderInfo orderInfo = orderInfoDao.findByOrderNo(outTradeNo);
             orderInfo.setOrderNo(outTradeNo);
             orderInfo.setPayStatus("Y");
+            orderInfo.setPayType("ali");
             orderInfoDao.save(orderInfo);
         }
         return "success";
