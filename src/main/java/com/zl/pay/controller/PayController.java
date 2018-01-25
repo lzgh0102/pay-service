@@ -95,6 +95,7 @@ public class PayController {
                 result.put("Ha-status", status);
                 result.put("Ha-type", payType);
                 result.put("Ha-Customer", "ceshi");
+                return result;
             }
         } catch (Exception e) {
             logger.error("", e);
