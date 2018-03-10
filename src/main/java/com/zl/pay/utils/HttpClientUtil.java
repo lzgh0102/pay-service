@@ -164,7 +164,7 @@ public class HttpClientUtil {
             // System.out.println("time:" + time);
             if (entity != null) {
                 // long len = entity.getContentLength();// -1 表示长度未知
-                String result = EntityUtils.toString(entity);
+                String result = EntityUtils.toString(entity, "UTF-8");
                 // System.out.println("result:" + result);
                 response.close();
                 // httpClient.close();

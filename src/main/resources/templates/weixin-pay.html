@@ -2,10 +2,38 @@
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=0,viewport-fit=cover">
+    <title>WeUI</title>
+    <link rel="stylesheet" href="/style/weui.css"/>
 </head>
 <body>
-<button onclick="pay()">确认支付</button>
+
+<div class="page">
+    <div class="page__bd">
+        <div class="weui-form-preview">
+            <<!--div class="weui-form-preview__hd">
+                <div class="weui-form-preview__item">
+                    <label class="weui-form-preview__label">付款金额</label>
+                    <em class="weui-form-preview__value">¥2400.00</em>
+                </div>
+            </div>-->
+            <div class="weui-form-preview__bd">
+                <div class="weui-form-preview__item">
+                    <label class="weui-form-preview__label">商品</label>
+                    <span class="weui-form-preview__value">停车费用</span>
+                </div>
+                <div class="weui-form-preview__item">
+                    <label class="weui-form-preview__label">商户</label>
+                    <span class="weui-form-preview__value">忻州立泊-立体停车</span>
+                </div>
+            </div>
+            <div class="weui-form-preview__ft">
+                <a class="weui-form-preview__btn weui-form-preview__btn_primary" href="javascript:pay()">确认支付</a>
+            </div>
+        </div>
+    </div>
+</div>
+
 </body>
 <script th:inline="javascript">
     var appId = [[${appId}]];
