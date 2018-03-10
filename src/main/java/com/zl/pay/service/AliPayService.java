@@ -54,14 +54,12 @@ public class AliPayService {
             response = alipayClient.execute(request);
         } catch (AlipayApiException e) {
             logger.error("", e);
-            e.printStackTrace();
         }
         if (response.isSuccess()) {
             String qrCode = response.getQrCode();
             return qrCode;
         } else {
             logger.error("调用失败");
-            System.out.println("调用失败");
         }
         return null;
     }

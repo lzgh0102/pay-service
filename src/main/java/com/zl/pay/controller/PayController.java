@@ -94,12 +94,11 @@ public class PayController {
 
                 result.put("Ha-status", status);
                 result.put("Ha-type", payType);
-                result.put("Ha-Customer", "ceshi");
+                result.put("Ha-Customer", custome);
                 return result;
             }
         } catch (Exception e) {
             logger.error("", e);
-            e.printStackTrace();
         }
         return null;
     }
@@ -171,10 +170,12 @@ public class PayController {
         String outTradeNo = request.getParameter("out_trade_no");
         String tradeStatus = request.getParameter("trade_status");
         if ("TRADE_SUCCESS".equals(tradeStatus)) {
+            String payAccount = request.getParameter("buyer_logon_id");
             OrderInfo orderInfo = orderInfoDao.findByOrderNo(outTradeNo);
             orderInfo.setOrderNo(outTradeNo);
             orderInfo.setPayStatus("Y");
             orderInfo.setPayType("ali");
+            orderInfo.setPayAccount(payAccount);
             orderInfoDao.save(orderInfo);
         }
         return "success";
