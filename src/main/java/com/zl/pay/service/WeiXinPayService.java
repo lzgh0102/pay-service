@@ -1,6 +1,7 @@
 package com.zl.pay.service;
 
 import com.alibaba.fastjson.JSONObject;
+import com.zl.pay.utils.AmountUtils;
 import com.zl.pay.utils.HttpClientUtil;
 import com.zl.pay.utils.WXPayUtil;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,9 +31,6 @@ public class WeiXinPayService {
     @Value("${weixin.pay.mch.id}")
     private String mchId;
 
-    @Value("${weixin.pay.mch.subid}")
-    private String subid;
-
     @Value("${weixin.pay.mch.key}")
     public String mchKey;
 
@@ -43,11 +41,10 @@ public class WeiXinPayService {
         Map<String, String> orderMap = new HashMap<>();
         orderMap.put("appid", appid);
         orderMap.put("mch_id", mchId);
-        orderMap.put("sub_mch_id", subid);
         orderMap.put("nonce_str", WXPayUtil.generateNonceStr());
         orderMap.put("body", "忻州立泊-立体停车");
         orderMap.put("out_trade_no", orderNo);
-        orderMap.put("total_fee", orderInfoService.getTotalFeeByOrderNo(orderNo) + "");
+        orderMap.put("total_fee", AmountUtils.changeY2F(orderInfoService.getTotalFeeByOrderNo(orderNo)));
         orderMap.put("spbill_create_ip", "123.12.12.123");
         orderMap.put("notify_url", domainName + "/weixin/notify");
         orderMap.put("trade_type", "JSAPI");

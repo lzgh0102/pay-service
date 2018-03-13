@@ -11,7 +11,7 @@
 <div class="page">
     <div class="page__bd">
         <div class="weui-form-preview">
-            <<!--div class="weui-form-preview__hd">
+            <!--div class="weui-form-preview__hd">
                 <div class="weui-form-preview__item">
                     <label class="weui-form-preview__label">付款金额</label>
                     <em class="weui-form-preview__value">¥2400.00</em>
@@ -43,6 +43,9 @@
     var paySign = [[${paySign}]];
 
     function onBridgeReady(){
+
+        alert(appId + "|" + timeStamp + "|" + nonceStr+ "|" + package+ "|" + paySign);
+
         WeixinJSBridge.invoke(
             'getBrandWCPayRequest', {
                 "appId":appId,     //公众号名称，由商户传入

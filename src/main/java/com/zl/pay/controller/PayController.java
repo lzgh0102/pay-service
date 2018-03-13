@@ -16,7 +16,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.ModelAndView;
 
+import javax.servlet.ServletInputStream;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -133,18 +137,19 @@ public class PayController {
         ModelAndView mv = new ModelAndView();
         mv.setViewName("weixin-pay");
         String appid = weixinPayService.appid;
-        String timeStamp = System.currentTimeMillis() + "";
+        String timeStamp = System.currentTimeMillis() / 1000 + "";
         String nonceStr = WXPayUtil.generateNonceStr();
         String packages = "prepay_id=" + prepayId;
 
         Map paramMap = new HashMap();
-        paramMap.put("appid", appid);
+        paramMap.put("appId", appid);
         paramMap.put("timeStamp", timeStamp);
         paramMap.put("nonceStr", nonceStr);
         paramMap.put("package", packages);
+        paramMap.put("signType", "MD5");
         try {
             String paySign = WXPayUtil.generateSignature(paramMap, weixinPayService.mchKey);
-            mv.addObject("appId", weixinPayService.appid);
+            mv.addObject("appId", appid);
             mv.addObject("timeStamp", timeStamp);
             mv.addObject("nonceStr", nonceStr);
             mv.addObject("package", packages);
@@ -179,5 +184,50 @@ public class PayController {
             orderInfoDao.save(orderInfo);
         }
         return "success";
+    }
+
+    @RequestMapping(value = "/weixin/notify")
+    public void wechatPayNotify(HttpServletRequest request, HttpServletResponse response) {
+        ServletInputStream instream = null;
+        try {
+            instream = request.getInputStream();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        StringBuffer sb = new StringBuffer();
+        int len;
+        byte[] buffer = new byte[1024];
+
+        try {
+            while ((len = instream.read(buffer)) != -1) {
+                sb.append(new String(buffer, 0, len));
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        try {
+            instream.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        try {
+            Map requestMap = WXPayUtil.xmlToMap(sb.toString());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        // 返回信息，防止微信重复发送报文
+        String result = "<xml>"
+                + "<return_code><![CDATA[SUCCESS]]></return_code>"
+                + "<return_msg><![CDATA[OK]]></return_msg>" + "</xml>";
+        PrintWriter out = null;
+        try {
+            out = new PrintWriter(response.getOutputStream());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        out.print(result);
+        out.flush();
+        out.close();
     }
 }
