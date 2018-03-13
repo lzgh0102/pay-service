@@ -1,9 +1,9 @@
 package com.zl.pay.controller;
 
 import com.zl.pay.dao.OrderInfoDao;
+import com.zl.pay.domain.PayStauts;
 import com.zl.pay.entity.OrderInfo;
 import com.zl.pay.service.AliPayService;
-import com.zl.pay.service.OrderInfoService;
 import com.zl.pay.service.WeiXinPayService;
 import com.zl.pay.utils.AmountUtils;
 import com.zl.pay.utils.WXPayUtil;
@@ -37,13 +37,14 @@ public class PayController {
     AliPayService aliPayService;
     @Autowired
     OrderInfoDao orderInfoDao;
-    @Autowired
-    OrderInfoService orderInfoService;
 
     @Value("${domain.name}")
     private String domainName;
 
     private static final Logger logger = LoggerFactory.getLogger(PayController.class);
+
+    private static final String PAY_TYPE_ALI = "ali";
+    private static final String PAY_TYPE_WECHAT = "wechat";
 
     @RequestMapping("/order")
     @ResponseBody
@@ -76,7 +77,7 @@ public class PayController {
                 }
                 OrderInfo orderInfo = new OrderInfo();
                 orderInfo.setOrderNo(orderNo);
-                orderInfo.setPayStatus("N");
+                orderInfo.setPayStatus(PayStauts.NOT_PAY);
                 String totalFee = AmountUtils.changeF2Y(totalAmount);
                 orderInfo.setTotalFee(totalFee);
                 orderInfoDao.save(orderInfo);
@@ -87,14 +88,18 @@ public class PayController {
                 result.put("Ha-QRCodeAddress", qrCodeAddress);
                 return result;
             } else if ("query".equals(type)) {
-                boolean isPaid = orderInfoService.isPaid(orderNo);
-                String status = "false";
-                if (isPaid) {
-                    status = "success";
-                }
+
                 OrderInfo order = orderInfoDao.findByOrderNo(orderNo);
                 String payType = order.getPayType();
                 String custome = order.getPayAccount();
+                String payStatus = order.getPayStatus();
+
+                String status = "false";
+                if (PayStauts.PAID.equals(payStatus)) {
+                    status = "success";
+                } else if (PayStauts.PAYING.equals(payStatus)) {
+                    status = "paying";
+                }
 
                 result.put("Ha-status", status);
                 result.put("Ha-type", payType);
@@ -112,6 +117,12 @@ public class PayController {
 
         String userAgent = request.getHeader("user-agent");
         String orderNo = request.getParameter("orderNo");
+        OrderInfo orderInfo = orderInfoDao.findByOrderNo(orderNo);
+        String payStatus = orderInfo.getPayStatus();
+        if (PayStauts.NOT_PAY.equals(payStatus)) {
+            orderInfo.setPayStatus(PayStauts.PAYING);
+            orderInfoDao.save(orderInfo);
+        }
 
         ModelAndView mv = new ModelAndView();
 
@@ -178,8 +189,8 @@ public class PayController {
             String payAccount = request.getParameter("buyer_logon_id");
             OrderInfo orderInfo = orderInfoDao.findByOrderNo(outTradeNo);
             orderInfo.setOrderNo(outTradeNo);
-            orderInfo.setPayStatus("Y");
-            orderInfo.setPayType("ali");
+            orderInfo.setPayStatus(PayStauts.PAID);
+            orderInfo.setPayType(PAY_TYPE_ALI);
             orderInfo.setPayAccount(payAccount);
             orderInfoDao.save(orderInfo);
         }
@@ -188,43 +199,47 @@ public class PayController {
 
     @RequestMapping(value = "/weixin/notify")
     public void wechatPayNotify(HttpServletRequest request, HttpServletResponse response) {
-        ServletInputStream instream = null;
+        ServletInputStream instream;
+        StringBuffer sb = new StringBuffer();
         try {
             instream = request.getInputStream();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        StringBuffer sb = new StringBuffer();
-        int len;
-        byte[] buffer = new byte[1024];
-
-        try {
+            int len;
+            byte[] buffer = new byte[1024];
             while ((len = instream.read(buffer)) != -1) {
                 sb.append(new String(buffer, 0, len));
             }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        try {
             instream.close();
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error("", e);
         }
+
         try {
             Map requestMap = WXPayUtil.xmlToMap(sb.toString());
+
+            String outTradeNo = request.getParameter("out_trade_no");
+            String payAccount = request.getParameter("out_trade_no");
+
+            OrderInfo orderInfo = orderInfoDao.findByOrderNo(outTradeNo);
+            orderInfo.setOrderNo(outTradeNo);
+            orderInfo.setPayStatus(PayStauts.PAID);
+            orderInfo.setPayType(PAY_TYPE_WECHAT);
+            orderInfo.setPayAccount(payAccount);
+            orderInfoDao.save(orderInfo);
+
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("", e);
         }
 
         // 返回信息，防止微信重复发送报文
         String result = "<xml>"
                 + "<return_code><![CDATA[SUCCESS]]></return_code>"
-                + "<return_msg><![CDATA[OK]]></return_msg>" + "</xml>";
+                + "<return_msg><![CDATA[OK]]></return_msg>"
+                + "</xml>";
         PrintWriter out = null;
         try {
             out = new PrintWriter(response.getOutputStream());
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error("", e);
         }
         out.print(result);
         out.flush();
