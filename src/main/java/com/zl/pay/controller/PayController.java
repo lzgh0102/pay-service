@@ -46,6 +46,8 @@ public class PayController {
     private static final String PAY_TYPE_ALI = "ali";
     private static final String PAY_TYPE_WECHAT = "wechat";
 
+    private static final String SUCCESS_SIGN = "SUCCESS";
+
     @RequestMapping("/order")
     @ResponseBody
     public Map<String, Object> pay(HttpServletRequest request) {
@@ -214,18 +216,21 @@ public class PayController {
         }
 
         try {
-            Map requestMap = WXPayUtil.xmlToMap(sb.toString());
-
-            String outTradeNo = request.getParameter("out_trade_no");
-            String payAccount = request.getParameter("out_trade_no");
-
-            OrderInfo orderInfo = orderInfoDao.findByOrderNo(outTradeNo);
-            orderInfo.setOrderNo(outTradeNo);
-            orderInfo.setPayStatus(PayStauts.PAID);
-            orderInfo.setPayType(PAY_TYPE_WECHAT);
-            orderInfo.setPayAccount(payAccount);
-            orderInfoDao.save(orderInfo);
-
+            Map<String, String> requestMap = WXPayUtil.xmlToMap(sb.toString());
+            String returnCode = requestMap.get("return_code");
+            if (SUCCESS_SIGN.equals(returnCode)) {
+                String resultCode = requestMap.get("result_code");
+                if (SUCCESS_SIGN.equals(resultCode)) {
+                    String outTradeNo = requestMap.get("out_trade_no");
+                    String payAccount = requestMap.get("openid");
+                    OrderInfo orderInfo = orderInfoDao.findByOrderNo(outTradeNo);
+                    orderInfo.setOrderNo(outTradeNo);
+                    orderInfo.setPayStatus(PayStauts.PAID);
+                    orderInfo.setPayType(PAY_TYPE_WECHAT);
+                    orderInfo.setPayAccount(payAccount);
+                    orderInfoDao.save(orderInfo);
+                }
+            }
         } catch (Exception e) {
             logger.error("", e);
         }

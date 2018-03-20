@@ -46,7 +46,7 @@ public class WeiXinPayService {
         orderMap.put("out_trade_no", orderNo);
         orderMap.put("total_fee", AmountUtils.changeY2F(orderInfoService.getTotalFeeByOrderNo(orderNo)));
         orderMap.put("spbill_create_ip", "123.12.12.123");
-        orderMap.put("notify_url", domainName + "/weixin/notify");
+        orderMap.put("notify_url", domainName + "/pay/weixin/notify");
         orderMap.put("trade_type", "JSAPI");
         orderMap.put("openid", openId);
         try {
